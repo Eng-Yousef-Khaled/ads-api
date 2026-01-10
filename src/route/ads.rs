@@ -52,19 +52,19 @@ async fn current_ads(
     .map_err(|e| {error!("{}", e);APIResponseError::InternalError})?;
     let res = sqlx::query_as::<_, Ads>(
         "\
-            Select 
-                name, 
-                is_published, 
-                idx, 
+            Select
+                name,
+                is_published,
+                idx,
                 start_at,
                 description,
                 title,end_at,
                 ads_type,
                 priority,
                 target_country,
-                media__type as media_type 
+                media__type as media_type
             from `tabAds`
-            where 
+            where
                 ads_type = ?
                 and
                     target_language in (?, 'Both')
