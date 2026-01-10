@@ -12,18 +12,14 @@ mod route;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    unsafe {
-        std::env::set_var("RUST_LOG", "info");
-        std::env::set_var("RUST_BACKTRACE", "1");
-    }
-
     env_logger::init();
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let port = std::env::var("PORT").expect("PORT must be set in .env file!");
 
     let pool = MySqlPool::connect(&database_url)
         .await
         .expect("Failed to create MySQL pool.");
-    println!("Run on http://127.0.0.1:8000");
+    println!("Run on http://127.0.0.1:{}", port);
     HttpServer::new(move || {
         let logger = Logger::default();
         App::new().wrap(logger).service(
@@ -32,7 +28,7 @@ async fn main() -> std::io::Result<()> {
                 .configure(ads_cfg).configure(click_ads_cfg)
         )
     })
-    .bind(("0.0.0.0", 8000))?
+    .bind(("0.0.0.0", port.parse().unwrap_or(5036)))?
     .run()
     .await
 }
