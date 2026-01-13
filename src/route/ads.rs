@@ -36,9 +36,25 @@ async fn current_ads(
     };
     let uuid = nanoid!(7);
     let _ = sqlx::query(
-        "insert
-        into `tabAds Request`(name, ads_type, user_uuid, user_name, current_language, user_ip_address, country, creation, modified, modified_by, owner) VALUES (?,?, ?, ?, ?, ?, ?, now(), now(),?,?)",
-    ).bind(uuid)
+        "\
+            insert into `tabAds Request`(
+                name,
+                ads_type,
+                user_uuid,
+                user_name,
+                current_language,
+                user_ip_address,
+                country,
+                creation,
+                modified,
+                come_at,
+                modified_by,
+                owner
+            ) values (
+                ?,?, ?, ?, ?, ?, ?, now(), now(), now(),?,?
+            )",
+    )
+    .bind(uuid)
     .bind(&req.ads_type)
     .bind(&req.user_uuid)
     .bind(&req.user_name)
@@ -49,7 +65,10 @@ async fn current_ads(
     .bind("Administrator")
     .execute(pool.get_ref())
     .await
-    .map_err(|e| {error!("{}", e);APIResponseError::InternalError})?;
+    .map_err(|e| {
+        error!("{}", e);
+        APIResponseError::InternalError
+    })?;
     let res = sqlx::query_as::<_, Ads>(
         "\
             Select
@@ -62,7 +81,7 @@ async fn current_ads(
                 ads_type,
                 priority,
                 target_country,
-                media__type as media_type
+                media_type
             from `tabAds`
             where
                 ads_type = ?
@@ -100,10 +119,28 @@ async fn get_ad(
     if name.is_empty() {
         return Err(APIResponseError::BadRequest);
     }
-    let res = sqlx::query_as::<_, Ads>("Select name, is_published, idx, start_at,description,title,end_at,ads_type,priority,target_country,media__type as media_type from `tabAds` WHERE name = ?")
-        .bind(name.into_inner())
-        .fetch_optional(pool.get_ref())
-        .await.map_err(|_e| APIResponseError::InternalError)?;
+    let res = sqlx::query_as::<_, Ads>(
+        "\
+            Select
+                name,
+                is_published,
+                idx,
+                start_at,
+                description,
+                title,
+                end_at,
+                ads_type,
+                priority,
+                target_country,
+                media_type
+            from
+                `tabAds`
+            where name = ?",
+    )
+    .bind(name.into_inner())
+    .fetch_optional(pool.get_ref())
+    .await
+    .map_err(|_e| APIResponseError::InternalError)?;
     match res {
         Some(v) => Ok(Json(v)),
         None => Err(APIResponseError::NotFound),
